@@ -112,11 +112,6 @@ def conversation_loop(args):
             transcribed_text = transcribe_audio(input_file)
             print(f"Transcribed text: {transcribed_text}")
             
-            # Check for exit command
-            if transcribed_text.lower().strip() in ["exit", "quit", "stop", "arrête", "fin", "au revoir"]:
-                conversation_active = False
-                continue
-            
             user_message = {"role": "user", "content": transcribed_text}
             conversation_history.append(user_message)
             
