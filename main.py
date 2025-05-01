@@ -48,15 +48,19 @@ def get_llm_response(text, conversation_history=None):
     
     if conversation_history:
         messages.extend(conversation_history)
-    
+
     messages.append({"role": "user", "content": text})
     
+    print(messages)
     chat_response = client.chat.complete(
         model=model,
         messages=messages
     )
     
     response_content = chat_response.choices[0].message.content
+
+    user_message = {"role": "user", "content": text}
+    conversation_history.append(user_message)
     
     return response_content, {"role": "assistant", "content": response_content}
 
@@ -111,9 +115,6 @@ def conversation_loop(args):
             # Step 2: Transcribe audio to text
             transcribed_text = transcribe_audio(input_file)
             print(f"Transcribed text: {transcribed_text}")
-            
-            user_message = {"role": "user", "content": transcribed_text}
-            conversation_history.append(user_message)
             
             # Step 3: Get response from LLM with conversation history
             llm_response, assistant_message = get_llm_response(transcribed_text, conversation_history)
