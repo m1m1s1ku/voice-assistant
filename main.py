@@ -36,7 +36,7 @@ def get_llm_response(text, conversation_history):
         
     # TODO : Make prompt configurable for multilanguage support
     messages = [
-        {"role": "system", "content": "Tu es un assistant IA utile et concis. Réponds en français. Maximum une phrase à la fois."}
+        {"role": "system", "content": "Tu es un assistant IA utile et concis. Réponds en français. Maximum une phrase à la fois. Ne répond surtout rien d'autre qu'une phrase, aucun exemple de code."}
     ]
     
     messages.extend(conversation_history)
