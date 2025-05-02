@@ -42,7 +42,8 @@ def get_llm_response(text, conversation_history=None):
     if conversation_history:
         messages.extend(conversation_history)
 
-    messages.append({"role": "user", "content": text})
+    user_message = {"role": "user", "content": text}
+    messages.append(user_message)
     
     # print(messages)
     prompt = tokenizer.apply_chat_template(
@@ -51,10 +52,10 @@ def get_llm_response(text, conversation_history=None):
 
     response_content = generate(model, tokenizer, prompt=prompt, verbose=True)
 
-    user_message = {"role": "user", "content": text}
     conversation_history.append(user_message)
+    conversation_history.append({"role": "assistant", "content": response_content})
     
-    return response_content, {"role": "assistant", "content": response_content}
+    return response_content
 
 def text_to_speech(text, output_file="response.wav", voice=None):
     """Convert text to speech using generate_audio from mlx-audio."""
@@ -109,11 +110,9 @@ def conversation_loop(args):
             print(f"Transcribed text: {transcribed_text}")
             
             # Step 3: Get response from LLM with conversation history
-            llm_response, assistant_message = get_llm_response(transcribed_text, conversation_history)
+            llm_response = get_llm_response(transcribed_text, conversation_history)
             print(f"LLM response : {llm_response}")
-            
-            conversation_history.append(assistant_message)
-            
+                        
             # Step 4: Convert LLM response to speech
             output_file = text_to_speech(llm_response, voice=args.voice)
             
