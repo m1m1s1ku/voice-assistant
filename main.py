@@ -7,7 +7,10 @@ import soundfile as sf
 import tempfile
 import mlx_whisper
 from mlx_audio.tts.generate import generate_audio
+from mlx_lm import load, generate
 from mistralai import Mistral
+
+model, tokenizer = load("mlx-community/Mistral-Small-24B-Instruct-2501-4bit")
 
 def record_audio(duration=5, sample_rate=16000):
     """Record audio from microphone for a specified duration."""
@@ -31,16 +34,7 @@ def transcribe_audio(audio_file):
 def get_llm_response(text, conversation_history=None):
     """Get response from an LLM based on the transcribed text and conversation history."""
     print(f"Getting LLM response for : {text}")
-    
-    api_key = os.environ.get("MISTRAL_API_KEY")
-    if not api_key:
-        print("Please supply a MISTRAL_API_KEY=xxx python demo.py.")
-        sys.exit(1)
-    
-    model = "mistral-large-latest"
-
-    client = Mistral(api_key=api_key)
-    
+        
     # TODO : Make prompt configurable for multilanguage support
     messages = [
         {"role": "system", "content": "Tu es un assistant IA utile et concis. Réponds en français. Maximum une phrase à la fois."}
@@ -51,13 +45,12 @@ def get_llm_response(text, conversation_history=None):
 
     messages.append({"role": "user", "content": text})
     
-    print(messages)
-    chat_response = client.chat.complete(
-        model=model,
-        messages=messages
+    # print(messages)
+    prompt = tokenizer.apply_chat_template(
+        messages, add_generation_prompt=True
     )
-    
-    response_content = chat_response.choices[0].message.content
+
+    response_content = generate(model, tokenizer, prompt=prompt, verbose=True)
 
     user_message = {"role": "user", "content": text}
     conversation_history.append(user_message)
