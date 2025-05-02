@@ -30,7 +30,7 @@ def transcribe_audio(audio_file):
                 ]
     return ref_text
 
-def get_llm_response(text, conversation_history=None):
+def get_llm_response(text, conversation_history):
     """Get response from an LLM based on the transcribed text and conversation history."""
     print(f"Getting LLM response for : {text}")
         
@@ -39,8 +39,7 @@ def get_llm_response(text, conversation_history=None):
         {"role": "system", "content": "Tu es un assistant IA utile et concis. Réponds en français. Maximum une phrase à la fois."}
     ]
     
-    if conversation_history:
-        messages.extend(conversation_history)
+    messages.extend(conversation_history)
 
     user_message = {"role": "user", "content": text}
     messages.append(user_message)
