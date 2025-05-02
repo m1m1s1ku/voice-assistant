@@ -1,6 +1,6 @@
 # Simple voice assistant in French
 
-Uses MLX audio and Mistral-Small-24B-Instruct-2501-4bit through MLX-LM
+Uses MLX audio with OuteTTS model and MLX-LM with Mistral-Small-24B-Instruct-2501-4bit
 
 ## Installation
 
