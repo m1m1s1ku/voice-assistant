@@ -17,8 +17,8 @@ def record_audio_with_silence_detection(timeout=10, phrase_time_limit=None, samp
     """Record audio from the microphone with silence detection."""
     recognizer = sr.Recognizer()
     
-    recognizer.pause_threshold = 2
-    recognizer.energy_threshold = 100
+    recognizer.pause_threshold = 0.8
+    recognizer.energy_threshold = 300
     
     print("Waiting for speech... (Speech now)")
     
@@ -134,7 +134,6 @@ def conversation_loop(args):
             transcribed_text = transcribe_audio(input_file)
             print(f"Transcribed text: {transcribed_text}")
             
-            # Vérifier si la transcription est vide
             if not transcribed_text.strip():
                 print("Blank transcript, starting next interaction...")
                 continue
