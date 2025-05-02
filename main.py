@@ -8,7 +8,6 @@ import tempfile
 import mlx_whisper
 from mlx_audio.tts.generate import generate_audio
 from mlx_lm import load, generate
-from mistralai import Mistral
 
 model, tokenizer = load("mlx-community/Mistral-Small-24B-Instruct-2501-4bit")
 
