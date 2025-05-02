@@ -8,15 +8,33 @@ import tempfile
 import mlx_whisper
 from mlx_audio.tts.generate import generate_audio
 from mlx_lm import load, generate
+import speech_recognition as sr
+import numpy as np
 
 model, tokenizer = load("mlx-community/Mistral-Small-24B-Instruct-2501-4bit")
 
-def record_audio(duration=5, sample_rate=16000):
-    """Record audio from microphone for a specified duration."""
-    print(f"Recording for {duration} seconds...")
-    audio = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1)
-    sd.wait()
-    return audio, sample_rate
+def record_audio_with_silence_detection(timeout=10, phrase_time_limit=None, sample_rate=16000):
+    """Record audio from the microphone with silence detection."""
+    recognizer = sr.Recognizer()
+    
+    recognizer.pause_threshold = 2
+    recognizer.energy_threshold = 100
+    
+    print("Waiting for speech... (Speech now)")
+    
+    with sr.Microphone(sample_rate=sample_rate) as source:
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+        
+        try:
+            audio_data = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+            
+            audio_np = np.frombuffer(audio_data.get_raw_data(), dtype=np.int16)
+            audio_float = audio_np.astype(np.float32) / 32768.0 # Normalize audio data [-1, 1]
+            
+            return audio_float, sample_rate
+            
+        except sr.WaitTimeoutError:
+            return np.zeros(0, dtype=np.float32), sample_rate
 
 def save_audio_to_file(audio, sample_rate, filename):
     """Save audio data to a WAV file."""
@@ -97,8 +115,16 @@ def conversation_loop(args):
     
     while conversation_active:
         try:
-            # Step 1: Record audio from microphone
-            audio, sample_rate = record_audio(duration=args.duration, sample_rate=args.sample_rate)
+            # Step 1: Record audio from microphone with silence detection
+            audio, sample_rate = record_audio_with_silence_detection(
+                timeout=args.timeout, 
+                phrase_time_limit=args.max_duration, 
+                sample_rate=args.sample_rate
+            )
+            
+            if len(audio) == 0:
+                print("No audio detected, starting for next interaction...")
+                continue
             
             # Save the recorded audio to a temporary file
             input_file = os.path.join(temp_dir, "input.wav")
@@ -107,6 +133,11 @@ def conversation_loop(args):
             # Step 2: Transcribe audio to text
             transcribed_text = transcribe_audio(input_file)
             print(f"Transcribed text: {transcribed_text}")
+            
+            # Vérifier si la transcription est vide
+            if not transcribed_text.strip():
+                print("Blank transcript, starting next interaction...")
+                continue
             
             # Step 3: Get response from LLM with conversation history
             llm_response = get_llm_response(transcribed_text, conversation_history)
@@ -127,10 +158,11 @@ def conversation_loop(args):
 
 def main():
     parser = argparse.ArgumentParser(description="MLX-Audio demo with microphone input and LLM response")
-    parser.add_argument("--duration", type=int, default=5, help="Recording duration in seconds")
-    parser.add_argument("--sample-rate", type=int, default=16000, help="Audio sample rate")
-    parser.add_argument("--voice", type=str, default=None, help="Path to OuteTTS voice file (e.g., alexandra.json)")
-    parser.add_argument("--model", type=str, default="OuteAI/Llama-OuteTTS-1.0-1B", help="Model path for TTS")
+    parser.add_argument("--timeout", type=int, default=10, help="Délai d'attente maximum pour commencer à parler (en secondes)")
+    parser.add_argument("--max-duration", type=int, default=None, help="Durée maximale d'enregistrement (en secondes)")
+    parser.add_argument("--sample-rate", type=int, default=16000, help="Taux d'échantillonnage audio")
+    parser.add_argument("--voice", type=str, default=None, help="Chemin vers le fichier de voix OuteTTS (ex: alexandra.json)")
+    parser.add_argument("--model", type=str, default="OuteAI/Llama-OuteTTS-1.0-1B", help="Chemin du modèle pour TTS")
     args = parser.parse_args()
     
     # Start the conversation loop instead of a single interaction
